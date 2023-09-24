@@ -1,0 +1,60 @@
+---
+title: "Assignment 1"
+author: "Sri Chandana"
+date: "2023-09-24"
+output:
+  html_document: default
+  pdf_document: default
+---
+```{r}
+videogamesdataset <- read.csv("C://Users//srich//Downloads//videogamesdataset//imdb_video_games.csv",nrows=100)
+# I considered video games data set which is imported from  https://www.kaggle.com/datasets/lorentzyeung/imdb-video-games-dataset
+```
+
+```{r}
+View(videogamesdataset)
+# The "video games data set" in the viewer is displayed to visually inspect the data set
+```
+
+```{r}
+mean(videogamesdataset$Year)
+# The average of the "Year" column is calculated
+```
+
+```{r}
+min(videogamesdataset$Year)
+# The minimum of the "Year" column is calculated
+```
+
+```{r}
+sd(videogamesdataset$Year)
+# The standard deviation of the "Year" column is calculated
+```
+
+```{r}
+table(videogamesdataset$Title)
+# A frequency table of unique values in "Title" column is created
+```
+
+```{r}
+str(videogamesdataset$Year)
+# It displays the structure of the "Year" column
+```
+
+```{r}
+videogamesdataset_transformed <- (videogamesdataset$Year - mean(videogamesdataset$Year)/sd(videogamesdataset$Year))
+videogamesdataset_transformed
+# The Variables were transformed
+```
+
+```{r}
+hist(videogamesdataset$Year)
+# The graphical representation of the distribution of numerical data here is a histogram
+```
+
+```{r}
+x <- videogamesdataset$Year
+y <- videogamesdataset$User.Rating
+plot(x,y, main = "scatterplot ", xlab = "Year", ylab = "User.Rating")
+# A scatter plot is created with "Year" on x-axis and "User.Rating" on y-axis.
+```
