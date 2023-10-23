@@ -1,0 +1,281 @@
+---
+title: "Assignment 2"
+author: "Sri Chandana"
+date: "2023-10-22"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+```{r}
+# It loads the class library
+# It loads the caret library
+
+library(class)
+library(caret)
+```
+
+```{r}
+# It loads the e1071 library
+library(e1071)
+```
+
+```{r}
+# It imports the "UniversalBank" dataset from the specified file path
+# It displays the dimensions of the "Uni_Bank" dataset
+
+Uni_Bank <- read.csv("C:/Users/srich/OneDrive/Desktop/R programming/UniversalBank.csv")
+dim(Uni_Bank)
+```
+
+```{r}
+# It displays the summary statistics for the "Uni_Bank" dataset
+summary(Uni_Bank)
+```
+
+```{r}
+# It removes columns 'ID' and 'ZIP.Code' from "Uni_Bank"
+Uni_Bank$ID <- NULL
+Uni_Bank$ZIP.Code <- NULL
+```
+
+```{r}
+# It shows the revised dataset summary after removing 'ID' and 'ZIP.Code' columns
+summary(Uni_Bank)
+```
+
+```{r}
+# It converts "Education" column to a factor in Uni_Bank
+Uni_Bank$Education <- as.factor(Uni_Bank$Education)
+
+# It creates dummy variables for all columns in Uni_Bank
+Dummy_Var <- dummyVars(~., data = Uni_Bank)
+
+# It updates "Uni_Bank" with new dataset having dummy variables
+Uni_updated <- as.data.frame(predict(Dummy_Var,Uni_Bank))
+```
+
+```{r}
+# Splits data into 60% training and 40% validation sets
+# It creates training and validation datasets
+
+set.seed(1)
+train_data <- sample(row.names(Uni_updated), 0.6*dim(Uni_updated)[1])
+valid_data <- setdiff(row.names(Uni_updated), train_data)
+train_df <- Uni_updated[train_data,]
+valid_df <- Uni_updated[valid_data,]
+
+# It displays the summary statistics of the training dataset
+summary(train_df)
+```
+
+```{r}
+# It removes the 10th column which is 'Personal Income' from the training dataset
+# Selecting only the 10th column from the validation dataset
+
+train_normal_df <- train_df[,-10]
+valid_normal_df <- valid_df[,10]
+
+# It performs centering and scaling on the training data excluding 10th column
+normal_values <- preProcess(train_df[,-10], method = c("center","scale"))
+
+# It applies the centering and scaling transformation to the training and validation datasets
+train_normal_df <- predict(normal_values, train_df[,-10])
+valid_normal_df <- predict(normal_values, valid_df[,-10])
+```
+
+#1 > Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2, Education_1 = 0, Education_2 =1, Education_3 = 0, Mortgage = 0, Securities Account = 0, CD Account = 0, Online = 1, and Credit Card = 1. Perform a k-NN classification with all predictors except ID and ZIP codeusing k = 1. Remember to transform categorical predictors with more than two categories into dummy variables first. Specify the success class as 1 (loan acceptance), and use the default cutoff value of 0.5. How would this customer be classified?
+
+```{r}
+# It creates a data frame for a New_customer with these attributes
+New_customer <- data.frame( Age = 40,
+  Experience = 10,
+  Income = 84,
+  Family = 2,
+  CCAvg = 2,
+  Education.1 = 0,
+  Education.2 = 1,
+  Education.3 = 0,
+  Mortgage = 0,
+  Securities.Account = 0,
+  CD.Account = 0,
+  Online = 1,
+  CreditCard = 1)
+
+# It assigns the "New_customer" data to "New_customer_normal"
+New_customer_normal <- New_customer
+
+# Using "predict" function to transform the values in 'New_customer_normal' based on 'normal_values'
+New_customer_normal <- predict(normal_values, New_customer_normal)
+```
+
+```{r}
+# It performs k-NN (k-Nearest Neighbors) classification with k=1.
+# It displays the knn prediction1 result
+
+knn.prediction1 <- class::knn(train = train_normal_df, test = New_customer_normal, cl = train_df$Personal.Loan, k = 1)
+knn.prediction1
+```
+
+#2 > What is a choice of k that balances between overfitting and ignoring the predictor information?
+
+```{r}
+# Creating "accuracy.df" data frame with k and overallaccuracy columns 
+# Performing k-NN (k-nearest neighbors) prediction using 'k' as the parameter.
+# It stores the "overall accuracy" of the k-NN prediction in "accuracy.df".
+# Finding the value of 'k' with the maximum overall accuracy
+
+accuracy.df <- data.frame(k = seq(1, 15, 1), overallaccuracy = rep(0, 15))
+for(i in 1:15) 
+  {
+  knn.prediction <- class::knn(train = train_normal_df, 
+                         test = valid_normal_df, 
+                         cl = train_df$Personal.Loan, k = i)
+  accuracy.df[i, 2] <- confusionMatrix(knn.prediction, 
+                                       as.factor(valid_df$Personal.Loan),positive = "1")$overall[1]
+}
+which(accuracy.df[,2] == max(accuracy.df[,2]))
+```
+
+#3 > Show the confusion matrix for the validation data that results from using the best k.
+
+```{r}
+# Performing k-NN (k-Nearest Neighbors) classification on the test data
+knn.prediction2 <- class::knn(train = train_normal_df,
+                        test = valid_normal_df,
+                        cl= train_df$Personal.Loan, k= 3)
+# It displays the prediction
+knn.prediction2
+```
+
+```{r}
+# Calculating the confusion matrix for K-Nearest Neighbors prediction and then viewing the confusion matrix
+
+confusion.matrix <- confusionMatrix(knn.prediction2, as.factor(valid_df$Personal.Loan), positive = "1")
+confusion.matrix
+```
+
+#4 > Consider the following customer: Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2, Education_1 = 0, Education_2 = 1, Education_3 = 0, Mortgage = 0, Securities Account = 0, CD Account = 0, Online = 1 and Credit Card = 1. Classify the customer using the best k.
+
+```{r}
+# Creating a data frame for "New_customer1" with these attributes
+New_customer1 <- data.frame(
+  Age = 40,
+  Experience = 10,
+  Income = 84,
+  Family = 2,
+  CCAvg = 2,
+  Education.1 = 0,
+  Education.2 = 1,
+  Education.3 = 0,
+  Mortgage = 0,
+  Securities.Account = 0,
+  CD.Account = 0,
+  Online = 1,
+  CreditCard = 1
+)
+
+# Creating a new variable 'New_customer_normal1' and assigning the values of 'New_customer1' to it.
+New_customer_normal1 <- New_customer1
+New_customer_normal1 <- New_customer1
+
+#  Using the "predict" function to normalize the 'New_customer_normal1' data using normal_values.
+New_customer_normal1 <- predict(normal_values, New_customer_normal1)
+
+# Performing k-NN (k-Nearest Neighbors) classification on the normalized test data.
+knn.prediction3 <- class::knn(train = train_normal_df,
+                        test = New_customer_normal1,
+                        cl= train_df$Personal.Loan, k= 3)
+knn.prediction3
+
+```
+
+#5 > Repartition the data, this time into training, validation, and test sets (50% : 30% : 20%). Apply the k-NN method with the k chosen above. Compare the confusion matrix of the test set with that of the training and validation sets. Comment on the differences and their reason.
+
+```{r}
+
+set.seed(1) 
+
+# Splitting the data into 50% for training set, 30% for validation set and 20% for testing set.
+
+# Sample training data
+
+train_index1 <- sample(row.names(Uni_updated), 0.5*dim(Uni_updated)[1])
+train_df1 <-Uni_updated[train_index1,]
+
+# Creating a validation set by excluding the training data
+valid_index1 <- setdiff(row.names(Uni_updated), train_index1)
+valid_df1 <- Uni_updated[valid_index1, ]
+
+# Splitting the validation set into a second validation set
+valid_index2 <- sample(row.names(valid_df1), 0.6*dim(valid_df1)[1])
+valid_df2 <- valid_df1[valid_index2, ]
+
+# It creates a test set by excluding the second validation set
+test_index1 <- setdiff(row.names(valid_df1),valid_index2)
+test_df1 <- valid_df1[test_index1, ]
+```
+
+```{r}
+# It removes the 10th column from the training, validation, and test data sets
+train_normal_df1 <- train_df1[,-10]
+valid_normal_df2 <- valid_df2[,-10]
+test_normal_df1 <- test_df1[,-10]
+
+# Applying centering and scaling to the training data
+normal_values1 <- preProcess(train_df1[,-10], method = c("center", "scale"))
+
+# It transforms the training, validation, and test data using the calculated normalization values
+train_normal_df1 <- predict(normal_values1, train_df1[,-10])
+valid_normal_df2 <- predict(normal_values1, valid_df2[,-10])
+test_normal_df1 <- predict(normal_values1, test_df1[,-10])
+```
+
+```{r}
+# Performing k-NN(k-nearest neighbors)prediction and displays the prediction
+# It is knn-prediction of 50% training data.
+
+knn_prediction4 <- class::knn(train = train_normal_df1,
+                        test = train_normal_df1,
+                        cl= train_df1$Personal.Loan, k= 3)
+knn_prediction4
+```
+
+```{r}
+# Calculating the confusion matrix for K-Nearest Neighbors prediction and then viewing the confusion matrix
+
+confusion_matrix1 <- confusionMatrix(knn_prediction4, as.factor(train_df1$Personal.Loan))
+confusion_matrix1
+
+```
+
+```{r}
+# It is knn-prediction of 30% validation data.
+knn_prediction5 <- class::knn(train = train_normal_df1,
+                        test = valid_normal_df2,
+                        cl= train_df1$Personal.Loan, k= 3)
+knn_prediction5
+```
+
+```{r}
+# Calculating the confusion matrix for K-Nearest Neighbors prediction and then viewing the confusion matrix
+
+confusion_matrix2 <- confusionMatrix(knn_prediction5, as.factor(valid_df2$Personal.Loan))
+confusion_matrix2
+```
+
+```{r}
+# It is knn-prediction of 20% testing data.
+knn_prediction6 <- class::knn(train = train_normal_df1,
+                        test = test_normal_df1,
+                        cl= train_df1$Personal.Loan, k= 3)
+knn_prediction6
+```
+
+```{r}
+# Calculating the confusion matrix for K-Nearest Neighbors prediction and then viewing the confusion matrix
+
+confusion_matrix3 <- confusionMatrix(knn_prediction6, as.factor(test_df1$Personal.Loan))
+confusion_matrix3
+```
+
