@@ -1,0 +1,121 @@
+---
+title: "ASSIGNMENT 3(FML)"
+author: "Sri Chandana"
+date: "2023-11-06"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+# It imports the "Online_Retail" dataset from the specified file path
+
+Uni_Bank1 <- read.csv("C:/Users/srich/OneDrive/Desktop/R programming/UniversalBank-1.csv")
+```
+
+```{r}
+# It converts the 'Personal.Loan' column in the 'Uni_Bank1' data frame to a factor
+# It converts the 'Online' column in the 'Uni_Bank1' data frame to a factor.
+# It converts the 'CreditCard' column in the 'Uni_Bank1' data frame to a factor.
+Uni_Bank1$Personal.Loan <- as.factor(Uni_Bank1$Personal.Loan)
+Uni_Bank1$Online <- as.factor(Uni_Bank1$Online)
+Uni_Bank1$CreditCard <- as.factor(Uni_Bank1$CreditCard)
+
+```
+
+```{r}
+summary(Uni_Bank1)
+```
+```{r}
+# Loads all the mentioned libraries
+library(ggplot2)
+library(caret)
+library(reshape2)
+library(melt)
+library(ISLR)
+library(class)
+
+```
+
+```{r}
+# Set a random seed for reproducibility
+set.seed(23)
+# Using the 'createDataPartition' function to split the 'Personal.Loan' column of the 'Uni_Bank1' data frame.
+splitIndex <- createDataPartition(Uni_Bank1$Personal.Loan, p = 0.6, list = FALSE)
+# It creates the training dataset by selecting the rows indicated by 'splitIndex'
+# It creates the validation dataset by selecting the rows that are not in the 'splitIndex'
+
+train_data <- Uni_Bank1[splitIndex, ]
+valid_data <- Uni_Bank1[-splitIndex, ]
+```
+
+```{r}
+# It checks the dimensions of the training and validation dataset.
+dim(train_data)
+dim(valid_data)
+```
+
+```{r}
+# A) Create a pivot table for the training data with Online as a column variable, CC as a row variable, and Loan as a secondary row variable.
+Table1 <- ftable(train_data[,c(14,10,13)])
+Table1
+```
+```{r}
+
+# B)Consider the task of classifying a customer who owns a bank credit card and is actively using online banking services. Looking at the pivot table, what is the probability that this customer will accept the loan offer?
+
+# According to the pivot table, it is possible to calculate the probability of a customer accepting the loan offer as 53 / (53 + 497), which equals 0.096.
+
+```
+
+```{r}
+# C) Create two separate pivot tables for the training data. One will have Loan (rows) as a function of Online (columns) and the other will have Loan (rows) as a function of CC
+
+# Two separate pivot tables were created using the training data.
+
+melt1 <- melt(train_data,id=c("Personal.Loan"),variable="Online")
+melt2 <- melt(train_data,id=c("Personal.Loan"), variable="CreditCard")
+cast1 = dcast(melt1, Personal.Loan~Online)
+cast2 <- dcast(melt2, Personal.Loan~CreditCard)
+
+```
+```{r}
+# D) Compute the following quantities [P(A | B) means “the probability of A given B”:
+
+ftable(train_data[,c(10,13)])
+ftable(train_data[,c(10,14)])
+
+#1. P(CC = 1 | Loan = 1) = (92/92+196) = 0.319
+#2. P(Online = 1 | Loan = 1) = (167/167+121) = 0.579
+#3. P(Loan = 1) = (288/288+2712) = 0.096
+#4. P(CC = 1 | Loan = 0) = (812/812+1900) = 0.299
+#5. P(Online = 1 | Loan = 0) = (1624/ 1624+1088) = 0.598
+#6. P(Loan = 0) = (2712/ 2712+288) = 0.904
+
+```
+```{r}
+
+# E) Use the quantities computed above to compute the naive Bayes probability P(Loan = 1 | CC = 1, Online = 1)
+
+# Probability P(Loan = 1 | CC = 1, Online = 1)
+# (0. 319* 0.579* 0.096) / (0.319 * 0.579 * 0.096) + (0.299 * 0.598 * 0.904) = 0.098 
+
+```
+
+```{r}
+# F) Compare this value with the one obtained from the pivot table in (B). Which is a more accurate estimate?
+
+# The probability value calculated in part B is 0.096, and in the current question, it's approximately 0.098. These values have a very small difference. The calculation in part B is more accurate and specific, as it was based on less complex and dependent information.
+```
+
+```{r}
+# G) Which of the entries in this table are needed for computing P(Loan = 1 | CC = 1, Online = 1)? Run naive Bayes on the data. Examine the model output on training data, and find the entry that corresponds to P(Loan = 1 | CC = 1, Online = 1). Compare this to the number you obtained in (E).
+
+library(naivebayes)
+
+naive_b<- naive_bayes(Personal.Loan~Online+CreditCard,data=train_data)
+naive_b
+
+```
+
