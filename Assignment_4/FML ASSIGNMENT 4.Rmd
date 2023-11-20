@@ -1,0 +1,213 @@
+---
+title: "FML ASSIGNMENT 4"
+author: "Sri Chandana"
+date: "2023-11-19"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+# The necessary packages are loaded
+library(caret)
+```
+
+```{r}
+#install.packages("factoextra")
+library(factoextra)
+```
+
+```{r}
+library(dplyr)
+```
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+#install.packages("cowplot")
+library(cowplot)
+```
+
+```{r}
+#install.packages("flexclust")
+library(flexclust)
+```
+
+
+```{r}
+#install.packages("cluster")
+library(cluster)
+```
+
+
+```{r}
+#install.packages("NbClust")
+library(NbClust)
+```
+
+```{r}
+# It imports the "Pharmaceuticals" dataset from the specified file path
+Pharmacy <- read.csv("C://Users//srich//OneDrive//Desktop//FML//DATASETS//Pharmaceuticals.csv")
+```
+
+```{r}
+# The "Pharmacy" dataset will be viewed
+view(Pharmacy)
+```
+
+```{r}
+#  It displays the first few rows of the "Pharmacy" dataset
+head(Pharmacy)
+```
+
+```{r}
+# It displays the summary statistics for the "Pharmacy" dataset
+summary(Pharmacy)
+```
+
+```{r}
+#a. Use only the numerical variables (1 to 9) to cluster the 21 firms. Justify the various choices made in conducting the cluster analysis, such as weights for different variables, the specific clustering algorithm(s) used, the number of clusters formed, and so on.
+
+# Calculates the column wise mean of missing values in the "Pharmacy" dataset
+colMeans(is.na(Pharmacy))
+# Sets row names of "Pharmacy" to the values in the second column.
+row.names(Pharmacy) <- Pharmacy[,2]
+# Removes the second column from the "Pharmacy" dataset
+Pharmacy <- Pharmacy[,-2]
+#  Removes the first column and columns 11 to 13 from the updated "Pharmacy" dataset
+Pharmacy.1 <- Pharmacy[,-c(1,11:13)]
+```
+
+```{r}
+# Checks the dimensions of the "Pharmacy" dataset
+dim(Pharmacy)
+```
+
+```{r}
+# Standardizes the columns of "Pharmacy.1" using the scale function
+norm.Pharmacy.1 <- scale(Pharmacy.1)
+# Calculates the distance matrix based on the standardized data
+dist <- get_dist(norm.Pharmacy.1)
+# Visualizes the distance matrix using function
+fviz_dist(dist)
+```
+```{r}
+# The chart shows how the color intensity changes as we move across distances. As expected,the diagonal line representing the distance between two observations, has a value of zero.
+
+# For finding the best K Value: The Elbow chart and the Silhouette Method are effective ways to decide the number of clusters for a k-means model, especially when external factors don't guide the decision. The Elbow chart shows how increasing the number of clusters decreases overall cluster diversity. On the other hand, the Silhouette Method evaluates how well an objects cluster aligns with other clusters, helping us understand the cohesion within the clusters.
+```
+
+```{r}
+# Calculates Within Cluster Sum of Squares (WSS) for different numbers of clusters using the k-means algorithm
+WSS <- fviz_nbclust(norm.Pharmacy.1, kmeans, method = "wss")
+# Calculates Silhouette scores for different numbers of clusters using the k-means algorithm
+Sil <- fviz_nbclust(norm.Pharmacy.1, kmeans, method = "silhouette")
+# Displays the plots of WSS and Silhouette scores
+plot_grid(WSS, Sil)
+```
+```{r}
+# The charts indicate different optimal values for k, the Elbow Method suggests k=2, while the Silhouette Method produces k=5. Despite this, I have decided to use k=5 for the k-means method in my analysis.
+```
+
+```{r}
+# Set the seed for reproducibility
+# Performs k-means clustering on the normalized "Pharmacy.1" data with 5 centers 
+# Displays the cluster centers obtained from the k-means clustering
+set.seed(123)
+KMeans.Pharmacy.Opt <- kmeans(norm.Pharmacy.1, centers = 5, nstart = 50)
+KMeans.Pharmacy.Opt$centers
+```
+
+```{r}
+# Display the size of each cluster
+KMeans.Pharmacy.Opt$size
+```
+
+```{r}
+# Display the within-cluster sum of squares
+KMeans.Pharmacy.Opt$withinss
+```
+
+```{r}
+# Visualize the k-means clusters using a scatter plot
+fviz_cluster(KMeans.Pharmacy.Opt, data = norm.Pharmacy.1)
+```
+
+```{r}
+# Using the dataset,we identified five clusters based on their proximity to core points. Cluster 4 stands out for its high Market Capital, while Cluster 2 is notable for its high Beta. 
+# On the other hand, Cluster 5 is characterized by a low Asset Turnover.Examining the size of each cluster, Cluster 1 has the most enterprises, while Cluster 3 consists of only two. 
+# The within-cluster sum of squared distances provides insights into data dispersion: Cluster 1 (21.9) is less homogeneous than Cluster 3 (2.8).Visualizing the algorithm's results allows us to see the distinct groups the data has been divided into.
+```
+
+```{r}
+#b. Interpret the clusters with respect to the numerical variables used in forming the clusters.
+
+# Set the seed for reproducibility
+# Performs k-means clustering on the normalized "Pharmacy.1" data with 3 clusters
+# Displays the cluster centers
+
+set.seed(123)
+KMeans.Pharmacy <- kmeans(norm.Pharmacy.1, centers = 3, nstart = 50)
+KMeans.Pharmacy$centers
+```
+
+```{r}
+# Displays the sizes of each cluster obtained from the k-means clustering.
+KMeans.Pharmacy$size
+```
+
+```{r}
+# Displays the within-cluster sum of squares for each cluster
+KMeans.Pharmacy$withinss
+```
+
+```{r}
+# Visualize the k-means clusters using a scatter plot
+fviz_cluster(KMeans.Pharmacy, data = norm.Pharmacy.1)
+```
+
+```{r}
+clusplot(norm.Pharmacy.1,KMeans.Pharmacy$cluster,color = TRUE,shade =TRUE, labels=2,lines=0)
+```
+
+
+```{r}
+#c. Is there a pattern in the clusters with respect to the numerical variables (10 to 12)?
+
+# To explore patterns in the data for the last three categorical variables—Median Recommendation, Location, and Stock Exchange—I decided to use bar charts. These charts provide a visual representation of how firms are distributed among different clusters, allowing for a clearer understanding of trends in the data.
+
+Pharmacy.2 <-  Pharmacy%>% select(c(11,12,13)) %>% 
+    mutate(Cluster = KMeans.Pharmacy$cluster)
+Med_Recom <- ggplot(Pharmacy.2, mapping = aes(factor(Cluster), fill=Median_Recommendation)) +
+  geom_bar(position = 'dodge') +
+  labs(x='Clusters', y='Frequence')
+Loc <- ggplot(Pharmacy.2, mapping = aes(factor(Cluster), fill=Location)) +
+  geom_bar(position = 'dodge') + 
+  labs(x='Clusters', y='Frequence')
+Ex <- ggplot(Pharmacy.2, mapping = aes(factor(Cluster), fill=Exchange)) +
+  geom_bar(position = 'dodge') + 
+  labs(x='Clusters', y='Frequence')
+plot_grid(Med_Recom, Loc, Ex)
+
+```
+
+```{r}
+# The chart makes it clear that most companies in cluster 3 are from the United States, and all of them suggest holding their shares.They're exclusively traded on the New York Stock Exchange. For cluster 2, we've selected stocks with a "Moderate Buy" recommendation, and only two companies are from different exchanges (AMEX and NASDAQ). Cluster 1 reveals that the four firms come from four different countries, yet all their stocks are traded on the NYSE.
+```
+
+```{r}
+#d. Provide an appropriate name for each cluster using any or all of the variables in the dataset.
+
+#1) Cluster 1 - Global Giants: These companies are considered "overvalued international firms" because they operate globally, are listed on the NYSE, have low Net Profit Margins, and high Price/Earnings ratios.Despite their high market value, it's not well-supported by their current earnings. To sustain their stock prices, they need to invest and increase earnings to meet investor expectations.
+#2) Cluster 2 - Growth Prospects: This group is labeled as "growing and leveraged firms" due to "Moderate buy" evaluations, low asset turnover, low ROA, high leverage, and expected revenue growth.Even though they currently lack profitability and carry significant debt, investors see potential in their future growth, making them highly valued.
+#3) Cluster 3 - Stable US Companies: Companies in this cluster are characterized as "mature US firms" since they are based in the US, listed on the NYSE, and have "Hold" ratings.They are considered stable and mature, indicating a more conservative investment approach compared to the other clusters.
+```
+
